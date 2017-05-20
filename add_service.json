@@ -1,0 +1,11 @@
+{
+	"service_name" : "add_service",
+	"version" : 1,
+	"functions" : [
+		{
+			"function_name" : "myfunc1",
+			"parameters" : {"param1" : "type1", "param2" : "type2"},
+			"return" : {"retval1" : "type1", "retval2" : "type2"}
+		}
+	]
+}
