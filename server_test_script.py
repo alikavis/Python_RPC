@@ -8,8 +8,6 @@ import test_skeleton as skeleton
 class A(object):
     def __init__(self, name):
         self.name = name
-        self.host = host
-        self.port = port
 
     def func1(self, a, b):
         return a+b, 'addition'
