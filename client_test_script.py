@@ -6,9 +6,8 @@ import numbers, json, jsonpickle, Pyro4, socket, select, exceptions, time, sys
 import test_stub as stub
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
+    if len(sys.argv) < 3 :
         sys.exit(0)
 
-    servername = sys.argv[1]
-    stub = stub.test_stub(servername)
-    print stub.func1(10, 20, time.time())
+    stub = stub.test_stub()
+    print stub.func1(int(sys.argv[1]), int(sys.argv[2]), time.time())
