@@ -10,4 +10,5 @@ if __name__ == '__main__':
         sys.exit(0)
 
     stub = stub.add_service()
-    print stub.add(int(sys.argv[1]), int(sys.argv[2]), time.time())
+    print stub.add(int(sys.argv[1]), int(sys.argv[2]), 10)
+    print stub.subtract(int(sys.argv[1]), int(sys.argv[2]), 10)

@@ -243,6 +243,8 @@ class """, \
                     client.close()
                     raise err
 
+            self.request_set.add(params[0])
+
             try:
                 f = getattr(self.server_instance, func)
                 input_param = params[1:]

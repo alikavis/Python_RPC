@@ -12,6 +12,9 @@ class A(object):
     def add(self, a, b):
         return a+b, 'addition'
 
+    def subtract(self, a, b):
+        return a-b, 'subtraction'
+
 if __name__ == '__main__':
     a = A('test')
     server_skeleton = skeleton.add_service(a)

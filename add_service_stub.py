@@ -41,9 +41,9 @@ class add_service:
 			raise err
 
 		return data
-	def add(self, param1, param2, id):
+	def add(self, first, second, id):
 		# apply necessary type checkings
-		if not isinstance(param1, int) or not isinstance(param2, int):
+		if not isinstance(first, int) or not isinstance(second, int):
 			return None, 'Invalid input arguments'
 
 		# locate the server and retrieve connection information
@@ -63,7 +63,91 @@ class add_service:
 		server_port = remote_server.get_port()
 		print 'Located remote server at ' + server_ip + ':' + str(server_port)
 
-		param_list = [id, param1, param2]
+		param_list = [id, first, second]
+		marshalled_param = jsonpickle.encode(param_list)
+		func_name = inspect.stack()[0][3]
+
+		# try to initiate a conection witht the server
+		soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		try:
+			soc.connect((server_ip, int(server_port)))
+		except socket.error as err:
+			print 'Client Socket Connection Error:\n {0}: {1}'.format(err.no, err.strerror)
+			soc.shutdown()
+			soc.close()
+			return None, 'Failed to connect to the remote server'
+
+		count = -1
+		status = 0
+		while count < self.retry_count and status == 0:
+			count += 1
+			# send the function name and its parameters to remote server
+			try:
+				status = self.send_request(func_name, marshalled_param, soc)
+			except IOError as err:
+				print 'Client Remote Server Connection Error\n: {0}: {1}'.format(err[0], err[1])
+				soc.shutdown(1)
+				soc.close()
+				#return None, 'Problem while communicating with the remote server'
+
+		if count == self.retry_count:
+			return None, 'Client retry count reached'
+
+		# wait for a response from the server in a proper json format
+		count -= 1
+		response = ''
+		while count < self.retry_count and response == '':
+			try:
+				response = self.receive_response(soc, self.timeout/1000)
+			except (IOError, select.error) as err:
+				print 'Client Remote Server Response Error\n{0}: {1}'.format(err[0], err[1])
+				#return None, 'No valid response received from remote server'
+
+		if count == self.retry_count:
+			return None, 'Client retry count reached'
+
+		print response
+
+		json_obj = json.loads(response)
+		if json_obj['status'] == 'OK' or json_obj['status'] == 'SUCCESS':
+			if json_obj['size'] != len(json_obj['param']):
+				print 'Client invalid parameter marshalling from server'
+				return None, 'Return parameter checksum failure'
+
+			ret_param_list = jsonpickle.decode(json_obj['param'])
+
+			# return
+			if  not isinstance(ret_param_list[0], int) or not isinstance(ret_param_list[1], str):
+				return ret_param_list, json_obj['status']
+
+			else:
+				return None, 'Invalid return value types'
+		else:
+			return None, '' + json_obj['status'] + ': An error occurred at the remote server'
+
+	def subtract(self, first, second, id):
+		# apply necessary type checkings
+		if not isinstance(first, int) or not isinstance(second, int):
+			return None, 'Invalid input arguments'
+
+		# locate the server and retrieve connection information
+		# Pyro is used only for getting remote server ip and port, from a dummy proxy object
+		Pyro4.config.REQUIRE_EXPOSE = False
+		try:
+			name_server = Pyro4.locateNS()
+		except NamingError:
+			print 'Client Name Server Error:'
+			print ''.join(Pyro4.util.getPyroTraceback())
+			return None, 'Failed to locate name server'
+
+		# locate the server and retrieve its address
+		uri = name_server.lookup(self.server)
+		remote_server = Pyro4.Proxy(uri)
+		server_ip = remote_server.get_host()
+		server_port = remote_server.get_port()
+		print 'Located remote server at ' + server_ip + ':' + str(server_port)
+
+		param_list = [id, first, second]
 		marshalled_param = jsonpickle.encode(param_list)
 		func_name = inspect.stack()[0][3]
 
